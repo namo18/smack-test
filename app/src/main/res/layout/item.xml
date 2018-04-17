@@ -10,10 +10,16 @@
         android:layout_height="wrap_content"
         android:layout_weight="1" />
 
-    <TextView
-        android:id="@+id/tv_b"
-        android:layout_width="match_parent"
+    <Button
+        android:id="@+id/button"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_weight="1" />
+        android:text="接受" />
+
+    <Button
+        android:id="@+id/button3"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="拒绝" />
 
 </LinearLayout>

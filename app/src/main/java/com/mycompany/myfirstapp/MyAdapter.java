@@ -40,10 +40,10 @@ public class MyAdapter extends CursorAdapter{
     public void setChildView(View view, Cursor cursor)
     {
         TextView a = (TextView)view.findViewById(R.id.tv_a);
-        TextView b = (TextView)view.findViewById(R.id.tv_b);
+//        TextView b = (TextView)view.findViewById(R.id.tv_b);
         if(cursor.moveToNext() && cursor.getCount()>0){
             a.setText(cursor.getString(cursor.getColumnIndex("name")));
-            b.setText(cursor.getString(cursor.getColumnIndex("pass")));
+//            b.setText(cursor.getString(cursor.getColumnIndex("pass")));
         }
     }
     @Override
