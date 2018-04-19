@@ -12,7 +12,7 @@ public class MyDbHelper extends SQLiteOpenHelper {
 
     public static final String DATABASE_NAME = "test.db";
     public static final int DATABASE_VERSION = 1;
-    public static final String TABLE_NAME = "test";
+    public static final String TABLE_NAME = "Chat";
 
     private static MyDbHelper instance;
 
@@ -29,7 +29,7 @@ public class MyDbHelper extends SQLiteOpenHelper {
 
     @Override
     public void onCreate(SQLiteDatabase db) {
-        String table_sql = "create table if not exists " + TABLE_NAME + " (_id INTEGER PRIMARY KEY AUTOINCREMENT, name text, pass text)";
+        String table_sql = "create table if not exists " + TABLE_NAME + " (_id INTEGER PRIMARY KEY AUTOINCREMENT, name text, pass text, presence integer)";
         db.execSQL(table_sql);
     }
 

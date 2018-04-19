@@ -47,7 +47,7 @@ public class MyContentProvider extends ContentProvider {
         }
         SQLiteDatabase db = dbHelper.getWritableDatabase();
 
-        long rowId = db.insert("test",null,values);
+        long rowId = db.insert(MyDbHelper.TABLE_NAME, null,values);
         if(rowId>0){
             Uri noteUri = ContentUris.withAppendedId(Uri.parse("content://"+AUTHORITY +"/test"),rowId);
             if(getContext()!=null)

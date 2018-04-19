@@ -2,6 +2,7 @@ package com.mycompany.myfirstapp;
 
 import android.Manifest;
 import android.content.ContentResolver;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -83,13 +84,22 @@ public class MyActivity extends AppCompatActivity implements View.OnClickListene
 
         int[] buttons = new int[]{R.id.btn_add_roster,R.id.btn_check_state,R.id.btn_connect,
                 R.id.btn_login,R.id.btn_select,R.id.btn_select_roster,R.id.btn_delete_roster,
-                R.id.btn_subscribe, R.id.btn_logout};
+                R.id.btn_subscribe, R.id.btn_logout,R.id.btn_unsubscribe,R.id.btn_search};
 
         for(int i :buttons) {
             System.out.print(i);
             Button btngroup = findViewById(i);
             btngroup.setOnClickListener(this);
         }
+
+        ListView lv = findViewById(R.id.listView1);
+        ContentResolver contentResolver = getContentResolver();
+        Uri uri = Uri.parse(MyContentProvider.AUTHORITY);
+        Cursor c = contentResolver.query(uri,new String[]{"name"},null,null,"_id desc");
+
+        MyAdapter adapter = new MyAdapter(this,c);
+        lv.setAdapter(adapter);
+
         btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -137,7 +147,7 @@ public class MyActivity extends AppCompatActivity implements View.OnClickListene
             }
         });
 
-        ListView listView = (ListView)findViewById(R.id.listView1);
+       // ListView listView = (ListView)findViewById(R.id.listView1);
 
 //        ContentResolver provider = getContentResolver();
 //        Uri uri = Uri.parse("CONTENT://"+MyContentProvider.AUTHORITY);
@@ -218,6 +228,7 @@ public class MyActivity extends AppCompatActivity implements View.OnClickListene
 //                                        intent.putExtra("acceptAdd", acceptAdd);
 //                                        intent.setAction("com.example.eric_jqm_chat.AddFriendActivity");
 //                                        sendBroadcast(intent);
+                                        //todo 修改接受好友请求
                                         friendQuest(from);
                                     } else if (presence.getType().equals(
                                             Presence.Type.subscribed)) {
@@ -343,6 +354,25 @@ public class MyActivity extends AppCompatActivity implements View.OnClickListene
                 {
                     e.printStackTrace();
                 }
+                break;
+            case R.id.btn_unsubscribe:
+                try {
+                    Presence subscribe = new Presence(Presence.Type.unsubscribe);
+                    Jid jid = JidCreate.bareFrom(JidCreate.from("8615266115359", xmppConnection.getServiceName(), "android"));
+                    subscribe.setTo(jid);
+                    xmppConnection.sendStanza(subscribe);
+                }catch (Exception err)
+                {
+                    err.printStackTrace();
+                }
+                break;
+            case R.id.btn_search:
+                Intent intent = new Intent(this, DisplayMessageActivity.class);
+                EditText editText = (EditText) findViewById(R.id.edit_message);
+                String message = editText.getText().toString();
+                intent.putExtra(EXTRA_MESSAGE, message);
+                startActivity(intent);
+                break;
         }
     }
 
@@ -351,16 +381,23 @@ public class MyActivity extends AppCompatActivity implements View.OnClickListene
             Roster roster = Roster.getInstanceFor(xmppConnection);
             RosterEntry entry = roster.getEntry(JidCreate.bareFrom(friend));
             if(entry != null) {
-                System.out.println(friend.toString() + " Can See :" + entry.canSeeHisPresence());
+                System.out.println(friend.toString() + " can See His Presence :" + entry.canSeeHisPresence());
                 Presence presenceRes = new Presence(Presence.Type.subscribed);
                 presenceRes.setTo(friend);
                 xmppConnection.sendStanza(presenceRes);
             }
             else
             {
-                Presence presenceRes = new Presence(Presence.Type.subscribed);
-                presenceRes.setTo(friend);
-                xmppConnection.sendStanza(presenceRes);
+
+                ContentResolver contentResolver = getContentResolver();
+                ContentValues values = new ContentValues();
+                values.put("name",friend.toString());
+                Uri uri =Uri.parse("content://" + MyContentProvider.AUTHORITY + "/test");
+                contentResolver.insert(uri,values);
+
+//                Presence presenceRes = new Presence(Presence.Type.subscribed);
+//                presenceRes.setTo(friend);
+//                xmppConnection.sendStanza(presenceRes);
             }
 //            Presence presenceRes = new Presence(Presence.Type.subscribed);
 //            presenceRes.setTo(friend);
@@ -462,5 +499,4 @@ public class MyActivity extends AppCompatActivity implements View.OnClickListene
         intent.putExtra(EXTRA_MESSAGE, message);
         startActivity(intent);
     }
-
 }

@@ -30,6 +30,7 @@ public class MyAdapter extends CursorAdapter{
     {
         super(context,c,autoRequery);
         // TODO Auto-generated constructor stub
+        
 
     }
     @Override

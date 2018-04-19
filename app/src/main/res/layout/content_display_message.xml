@@ -17,6 +17,12 @@
         android:onClick="addItem"
         android:text="@string/btn_add" />
 
+    <Button
+        android:id="@+id/btn_query_db"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Query DB" />
+
     <ListView
         android:id="@+id/listView"
         android:layout_width="match_parent"
