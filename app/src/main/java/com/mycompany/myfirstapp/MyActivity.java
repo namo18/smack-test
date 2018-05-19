@@ -26,6 +26,9 @@ import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
 
+import com.mycompany.myfirstapp.trustStore.MemorizingTrustManager;
+
+import org.apache.http.conn.ssl.StrictHostnameVerifier;
 import org.jivesoftware.smack.ConnectionConfiguration;
 import org.jivesoftware.smack.PacketListener;
 import org.jivesoftware.smack.SmackException;
@@ -43,25 +46,36 @@ import org.jivesoftware.smack.roster.Roster;
 import org.jivesoftware.smack.roster.RosterEntry;
 import org.jivesoftware.smack.tcp.XMPPTCPConnection;
 import org.jivesoftware.smack.tcp.XMPPTCPConnectionConfiguration;
+import org.jivesoftware.smackx.iqregister.AccountManager;
 import org.jivesoftware.smackx.search.ReportedData;
 import org.jivesoftware.smackx.search.UserSearch;
 import org.jivesoftware.smackx.search.UserSearchManager;
 import org.jivesoftware.smackx.vcardtemp.VCardManager;
 import org.jivesoftware.smackx.vcardtemp.packet.VCard;
 import org.jivesoftware.smackx.xdata.Form;
+import org.jxmpp.jid.BareJid;
 import org.jxmpp.jid.EntityBareJid;
 import org.jxmpp.jid.Jid;
 import org.jxmpp.jid.impl.JidCreate;
+import org.jxmpp.jid.parts.Localpart;
 import org.jxmpp.stringprep.XmppStringprepException;
 
 import java.io.IOException;
 import java.net.InetAddress;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
+
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.X509TrustManager;
 
 
 public class MyActivity extends AppCompatActivity implements View.OnClickListener {
@@ -82,12 +96,12 @@ public class MyActivity extends AppCompatActivity implements View.OnClickListene
 
         Button btn = (Button) findViewById(R.id.button2);
 
-        int[] buttons = new int[]{R.id.btn_add_roster,R.id.btn_check_state,R.id.btn_connect,
-                R.id.btn_login,R.id.btn_select,R.id.btn_select_roster,R.id.btn_delete_roster,
-                R.id.btn_subscribe, R.id.btn_logout,R.id.btn_unsubscribe,R.id.btn_search};
+        int[] buttons = new int[]{R.id.btn_add_roster, R.id.btn_check_state, R.id.btn_connect,
+                R.id.btn_login, R.id.btn_select, R.id.btn_select_roster, R.id.btn_delete_roster,
+                R.id.btn_subscribe, R.id.btn_logout, R.id.btn_unsubscribe, R.id.btn_search,
+                R.id.btn_account_attrib,R.id.btn_create_account,R.id.btn_subcribed};
 
-        for(int i :buttons) {
-            System.out.print(i);
+        for (int i : buttons) {
             Button btngroup = findViewById(i);
             btngroup.setOnClickListener(this);
         }
@@ -95,9 +109,9 @@ public class MyActivity extends AppCompatActivity implements View.OnClickListene
         ListView lv = findViewById(R.id.listView1);
         ContentResolver contentResolver = getContentResolver();
         Uri uri = Uri.parse(MyContentProvider.AUTHORITY);
-        Cursor c = contentResolver.query(uri,new String[]{"name"},null,null,"_id desc");
+        Cursor c = contentResolver.query(uri, new String[]{"name"}, null, null, "_id desc");
 
-        MyAdapter adapter = new MyAdapter(this,c);
+        MyAdapter adapter = new MyAdapter(this, c);
         lv.setAdapter(adapter);
 
         btn.setOnClickListener(new View.OnClickListener() {
@@ -147,7 +161,7 @@ public class MyActivity extends AppCompatActivity implements View.OnClickListene
             }
         });
 
-       // ListView listView = (ListView)findViewById(R.id.listView1);
+        // ListView listView = (ListView)findViewById(R.id.listView1);
 
 //        ContentResolver provider = getContentResolver();
 //        Uri uri = Uri.parse("CONTENT://"+MyContentProvider.AUTHORITY);
@@ -172,6 +186,12 @@ public class MyActivity extends AppCompatActivity implements View.OnClickListene
                 q1.postRunnable(new Runnable() {
                     public void run() {
                         try {
+                            MemorizingTrustManager mtm = new MemorizingTrustManager(getApplicationContext());
+                            SSLContext sslcontext = SSLContext.getInstance("TLS");
+                            sslcontext.init(null, new X509TrustManager[] { mtm }, new SecureRandom());
+
+                            assert sslcontext != null;
+
                             XMPPTCPConnectionConfiguration.Builder mBuilder = XMPPTCPConnectionConfiguration.builder();
                             mBuilder.setHostAddress(InetAddress.getByName("192.168.2.19"));
                             mBuilder.setPort(5222);
@@ -179,6 +199,9 @@ public class MyActivity extends AppCompatActivity implements View.OnClickListene
                             mBuilder.setResource("android");
                             mBuilder.setCompressionEnabled(true);
                             mBuilder.setSecurityMode(ConnectionConfiguration.SecurityMode.disabled);
+//                            mBuilder.setSecurityMode(ConnectionConfiguration.SecurityMode.required)
+//                                    .setCustomSSLContext(sslcontext)
+//                                    .setHostnameVerifier(mtm.wrapHostnameVerifier(new StrictHostnameVerifier()));
 
                             XMPPTCPConnectionConfiguration mConfig = mBuilder.build();
 
@@ -187,7 +210,7 @@ public class MyActivity extends AppCompatActivity implements View.OnClickListene
 
 
                         } catch (XMPPException | SmackException | IOException |
-                                InterruptedException e)
+                                InterruptedException|NoSuchAlgorithmException|KeyManagementException e)
 
                         {
                             e.printStackTrace();
@@ -195,16 +218,32 @@ public class MyActivity extends AppCompatActivity implements View.OnClickListene
                     }
                 });
                 break;
+
+            case R.id.btn_subcribed:
+                try{
+                    TextView tv = findViewById(R.id.edit_friend);
+                    String friend = tv.getText().toString();
+
+                    Presence presenceRes = new Presence(Presence.Type.subscribed);
+                    Jid jid = JidCreate.bareFrom(JidCreate.from(friend, xmppConnection.getServiceName(), "android"));
+                    presenceRes.setTo(jid);
+                    xmppConnection.sendStanza(presenceRes);
+                }catch (Exception err){
+                    err.printStackTrace();
+                }
+
+                break;
             case R.id.btn_login:
                 try {
                     TextView textView = findViewById(R.id.edit_message);
+                    TextView password = findViewById(R.id.edit_password);
                     Roster.setDefaultSubscriptionMode(Roster.SubscriptionMode.manual);
 
-                    xmppConnection.login(textView.getText().toString(), "1");
+                    xmppConnection.login(textView.getText().toString(), password.getText().toString());
                     System.out.println("sengmessage click");
                     System.out.print(xmppConnection.isConnected());
 
-                    if(xmppConnection!=null&&xmppConnection.isConnected()&&xmppConnection.isAuthenticated()) {
+                    if (xmppConnection != null && xmppConnection.isConnected() && xmppConnection.isAuthenticated()) {
 
                         //条件过滤器
                         StanzaFilter filter = new StanzaTypeFilter(Presence.class);
@@ -213,39 +252,21 @@ public class MyActivity extends AppCompatActivity implements View.OnClickListene
 
                             @Override
                             public void processStanza(Stanza packet) {
-                                String name,password,response,acceptAdd,alertName,alertSubName;
+                                String name, password, response, acceptAdd, alertName, alertSubName;
                                 System.out.println("PresenceService-" + packet.toXML());
                                 if (packet instanceof Presence) {
                                     Presence presence = (Presence) packet;
                                     Jid from = presence.getFrom();//发送方
                                     Jid to = presence.getTo();//接收方
                                     if (presence.getType().equals(Presence.Type.subscribe)) {
-                                        System.out.println("收到添加请求！From:"+from.toString() + "To:"+to.toString());
-                                        //发送广播传递发送方的JIDfrom及字符串
-//                                        acceptAdd = "收到添加请求！";
-//                                        Intent intent = new Intent();
-//                                        intent.putExtra("fromName", from.toString());
-//                                        intent.putExtra("acceptAdd", acceptAdd);
-//                                        intent.setAction("com.example.eric_jqm_chat.AddFriendActivity");
-//                                        sendBroadcast(intent);
-                                        //todo 修改接受好友请求
-                                        friendQuest(from);
+                                        System.out.println("收到添加请求！From:" + from.toString() + "To:" + to.toString());
                                     } else if (presence.getType().equals(
                                             Presence.Type.subscribed)) {
-                                        //发送广播传递response字符串
-                                        response = "恭喜，对方同意添加好友！";
-                                        Intent intent = new Intent();
-                                        intent.putExtra("response", response);
-                                        intent.setAction("com.example.eric_jqm_chat.AddFriendActivity");
-                                        sendBroadcast(intent);
+                                        System.out.println( "恭喜，对方同意添加好友！From:" + from.toString() + "To:" + to.toString());
                                     } else if (presence.getType().equals(
                                             Presence.Type.unsubscribe)) {
                                         //发送广播传递response字符串
-                                        response = "抱歉，对方拒绝添加好友，将你从好友列表移除！";
-                                        Intent intent = new Intent();
-                                        intent.putExtra("response", response);
-                                        intent.setAction("com.example.eric_jqm_chat.AddFriendActivity");
-                                        sendBroadcast(intent);
+                                        System.out.println( "抱歉，对方拒绝添加好友，将你从好友列表移除！From:" + from.toString() + "To:" + to.toString());
                                     } else if (presence.getType().equals(
                                             Presence.Type.unsubscribed)) {
                                     } else if (presence.getType().equals(
@@ -260,7 +281,7 @@ public class MyActivity extends AppCompatActivity implements View.OnClickListene
                         //添加监听
                         xmppConnection.addAsyncStanzaListener(listener, filter);
                     }
-                    } catch (Exception e) {
+                } catch (Exception e) {
                     e.printStackTrace();
                 }
 
@@ -294,9 +315,11 @@ public class MyActivity extends AppCompatActivity implements View.OnClickListene
                 break;
             case R.id.btn_add_roster:
                 try {
+
+                    TextView tv = findViewById(R.id.edit_friend);
                     Roster roster = Roster.getInstanceFor(xmppConnection);
-                    Jid jid = JidCreate.bareFrom(JidCreate.from("8615266115359", xmppConnection.getServiceName(), "android"));
-                    roster.createEntry(JidCreate.bareFrom(jid), "test", null);
+                    BareJid jid = JidCreate.bareFrom(JidCreate.from(tv.getText().toString(), xmppConnection.getServiceName(), "android"));
+                    roster.createEntry(jid, "test", null);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -304,17 +327,18 @@ public class MyActivity extends AppCompatActivity implements View.OnClickListene
             case R.id.btn_select_roster:
                 System.out.println("click:好友列表");
                 try {
+
+                    TextView tv = findViewById(R.id.edit_friend);
                     Roster roster = Roster.getInstanceFor(xmppConnection);
-                    Collection<RosterEntry> entries = roster.getUnfiledEntries();
-                    Jid jid = JidCreate.bareFrom(JidCreate.from("8615266115359", xmppConnection.getServiceName(), "android"));
+                    Collection<RosterEntry> entries = roster.getEntries();
+                    Jid jid = JidCreate.bareFrom(JidCreate.from(tv.getText().toString(), xmppConnection.getServiceName(), "android"));
                     for (RosterEntry entry : entries) {
                         System.out.println(entry.getJid().toString());
                         System.out.println("isSubscriptionPending:" + entry.isSubscriptionPending());
                         System.out.println("isApproved:" + entry.isApproved());
                         System.out.println("canSeeHisPresence:" + entry.canSeeHisPresence());
                         System.out.println("canSeeMyPresence:" + entry.canSeeMyPresence());
-                        if(entry.canSeeHisPresence() && !entry.canSeeMyPresence() )
-                        {
+                        if (entry.canSeeHisPresence() && !entry.canSeeMyPresence()) {
                             Presence presenceRes = new Presence(Presence.Type.subscribed);
                             presenceRes.setTo(entry.getJid());
                             xmppConnection.sendStanza(presenceRes);
@@ -325,24 +349,25 @@ public class MyActivity extends AppCompatActivity implements View.OnClickListene
                 }
                 break;
             case R.id.btn_delete_roster:
-                try{
+                try {
+
+                    TextView tv = findViewById(R.id.edit_friend);
                     Roster roster = Roster.getInstanceFor(xmppConnection);
-                    Jid jid = JidCreate.bareFrom(JidCreate.from("8615266115359", xmppConnection.getServiceName(), "android"));
+                    Jid jid = JidCreate.bareFrom(JidCreate.from(tv.getText().toString(), xmppConnection.getServiceName(), "android"));
                     RosterEntry entry = roster.getEntry(JidCreate.bareFrom(jid));
                     roster.removeEntry(entry);
-                }catch (Exception err)
-                {
+                } catch (Exception err) {
                     err.printStackTrace();
                 }
                 break;
             case R.id.btn_subscribe:
                 try {
+                    TextView tv = findViewById(R.id.edit_friend);
                     Presence subscribe = new Presence(Presence.Type.subscribe);
-                    Jid jid = JidCreate.bareFrom(JidCreate.from("8615266115359", xmppConnection.getServiceName(), "android"));
+                    Jid jid = JidCreate.bareFrom(JidCreate.from(tv.getText().toString(), xmppConnection.getServiceName(), "android"));
                     subscribe.setTo(jid);
                     xmppConnection.sendStanza(subscribe);
-                }catch (Exception err)
-                {
+                } catch (Exception err) {
                     err.printStackTrace();
                 }
                 break;
@@ -350,19 +375,19 @@ public class MyActivity extends AppCompatActivity implements View.OnClickListene
                 try {
                     xmppConnection.disconnect();
                     System.out.println("disconnect");
-                }catch (Exception e)
-                {
+                } catch (Exception e) {
                     e.printStackTrace();
                 }
                 break;
             case R.id.btn_unsubscribe:
                 try {
-                    Presence subscribe = new Presence(Presence.Type.unsubscribe);
-                    Jid jid = JidCreate.bareFrom(JidCreate.from("8615266115359", xmppConnection.getServiceName(), "android"));
+
+                    TextView tv = findViewById(R.id.edit_friend);
+                    Presence subscribe = new Presence(Presence.Type.unsubscribed);
+                    Jid jid = JidCreate.bareFrom(JidCreate.from(tv.getText().toString(), xmppConnection.getServiceName(), "android"));
                     subscribe.setTo(jid);
                     xmppConnection.sendStanza(subscribe);
-                }catch (Exception err)
-                {
+                } catch (Exception err) {
                     err.printStackTrace();
                 }
                 break;
@@ -373,27 +398,46 @@ public class MyActivity extends AppCompatActivity implements View.OnClickListene
                 intent.putExtra(EXTRA_MESSAGE, message);
                 startActivity(intent);
                 break;
+            case R.id.btn_create_account:
+                try {
+                    AccountManager accountManager = AccountManager.getInstance(xmppConnection);
+                    Map<String, String> attributes = new HashMap<String, String>();
+                    attributes.put("test", "test");
+                    accountManager.createAccount(Localpart.from("username"), "user password", attributes);
+                }catch (Exception e)
+                {
+                    e.printStackTrace();
+                }
+                break;
+            case R.id.btn_account_attrib:
+                try {
+                    AccountManager accountManager = AccountManager.getInstance(xmppConnection);
+
+                    System.out.println("Account attribute:"+accountManager.getAccountAttribute("username"));
+                }catch (Exception e)
+                {
+                    e.printStackTrace();
+                }
+                break;
         }
     }
 
-    public void friendQuest(final Jid friend){
+    public void friendQuest(final Jid friend) {
         try {
             Roster roster = Roster.getInstanceFor(xmppConnection);
             RosterEntry entry = roster.getEntry(JidCreate.bareFrom(friend));
-            if(entry != null) {
+            if (entry != null) {
                 System.out.println(friend.toString() + " can See His Presence :" + entry.canSeeHisPresence());
-                Presence presenceRes = new Presence(Presence.Type.subscribed);
-                presenceRes.setTo(friend);
-                xmppConnection.sendStanza(presenceRes);
-            }
-            else
-            {
+//                Presence presenceRes = new Presence(Presence.Type.subscribed);
+//                presenceRes.setTo(friend);
+//                xmppConnection.sendStanza(presenceRes);
+            } else {
 
                 ContentResolver contentResolver = getContentResolver();
                 ContentValues values = new ContentValues();
-                values.put("name",friend.toString());
-                Uri uri =Uri.parse("content://" + MyContentProvider.AUTHORITY + "/test");
-                contentResolver.insert(uri,values);
+                values.put("name", friend.toString());
+                Uri uri = Uri.parse("content://" + MyContentProvider.AUTHORITY + "/test");
+                contentResolver.insert(uri, values);
 
 //                Presence presenceRes = new Presence(Presence.Type.subscribed);
 //                presenceRes.setTo(friend);
@@ -402,8 +446,7 @@ public class MyActivity extends AppCompatActivity implements View.OnClickListene
 //            Presence presenceRes = new Presence(Presence.Type.subscribed);
 //            presenceRes.setTo(friend);
 //            xmppConnection.sendStanza(presenceRes);
-        }catch (Exception e)
-        {
+        } catch (Exception e) {
             e.printStackTrace();
         }
 //        AlertDialog.Builder builder  = new AlertDialog.Builder(this);

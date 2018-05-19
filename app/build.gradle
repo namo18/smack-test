@@ -1,4 +1,5 @@
 apply plugin: 'com.android.application'
+apply plugin: 'org.greenrobot.greendao' // apply plugin
 
 android {
     compileSdkVersion 26
@@ -16,10 +17,18 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+    buildToolsVersion '27.0.3'
 }
-
+greendao {
+    //数据库的schema版本，也可以理解为数据库版本号
+    schemaVersion 1
+    //设置DaoMaster、DaoSession、Dao包名，也就是要放置这些类的包的全路径。
+    daoPackage 'com.mycompany.myfirstapp.dtabase'
+    //设置DaoMaster、DaoSession、Dao目录
+    targetGenDir 'src/main/java'
+}
 dependencies {
-    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
     implementation 'com.android.support:appcompat-v7:26.1.0'
     implementation 'com.android.support.constraint:constraint-layout:1.0.2'
     implementation 'com.android.support:design:26.1.0'
@@ -28,4 +37,6 @@ dependencies {
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.1'
     implementation 'org.igniterealtime.smack:smack-android-extensions:4.2.3'
     implementation 'org.igniterealtime.smack:smack-tcp:4.2.3'
+    implementation 'org.greenrobot:greendao:3.2.2'
+    // add library
 }

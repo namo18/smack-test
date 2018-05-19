@@ -5,6 +5,7 @@ import android.database.Cursor;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.CursorAdapter;
 import android.widget.SimpleCursorAdapter;
 import android.widget.TextView;
@@ -22,36 +23,29 @@ public class MyAdapter extends CursorAdapter{
     public MyAdapter(Context context, Cursor c){
         super(context,c);
         layoutInflater = (LayoutInflater)context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-
     }
 
-    //构造函数。每当数据库的数据发生改变时，适配器将调用requery()重新查询以显示最新的数据。
-    public MyAdapter(Context context, Cursor c, boolean autoRequery)
-    {
-        super(context,c,autoRequery);
-        // TODO Auto-generated constructor stub
-        
-
-    }
-    @Override
-    public void bindView(View view, Context context, Cursor cursor){
-        setChildView(view,cursor);
+    public View newView(Context context, Cursor cursor, ViewGroup parent) {
+        return layoutInflater.inflate(R.layout.item ,parent,false);
     }
 
-    public void setChildView(View view, Cursor cursor)
-    {
-        TextView a = (TextView)view.findViewById(R.id.tv_a);
-//        TextView b = (TextView)view.findViewById(R.id.tv_b);
-        if(cursor.moveToNext() && cursor.getCount()>0){
-            a.setText(cursor.getString(cursor.getColumnIndex("name")));
-//            b.setText(cursor.getString(cursor.getColumnIndex("pass")));
-        }
-    }
-    @Override
-    public View newView(Context context, Cursor cursor, ViewGroup viewGroup){
-        //View view = LayoutInflater.from(context).inflate(R.layout.item,null);
-        View view = layoutInflater.inflate(R.layout.item,null);
-        setChildView(view,cursor);
-        return view;
+    public void bindView(View view, Context context, Cursor cursor) {
+        final TextView ta = view.findViewById(R.id.tv_a);
+        Button btnAccept = view.findViewById(R.id.btn_accept);
+        Button btnReject_ = view.findViewById(R.id.btn_reject);
+        ta.setText(cursor.getString(1));
+
+        btnAccept.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                System.out.println("Click Accept id="+ta.getText().toString());
+            }
+        });
+        btnReject_.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                System.out.println("Click Reject id="+ta.getText().toString());
+            }
+        });
     }
 }

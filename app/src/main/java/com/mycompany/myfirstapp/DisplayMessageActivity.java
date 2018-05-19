@@ -30,11 +30,12 @@ public class DisplayMessageActivity extends AppCompatActivity {
 
     private int cnt = 0;
     private SQLiteDatabase db;
+    private MyAdapter myAdapter;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_display_message);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
@@ -44,14 +45,13 @@ public class DisplayMessageActivity extends AppCompatActivity {
 
         Log.e("=========", message);
 
-        ListAdapter listAdapter;
-        CursorAdapter cursorAdapter;
-
-        ListView lv = (ListView) findViewById(R.id.listView);
-
         MyDbHelper dbHelper = MyDbHelper.getInstance(this);
         db = dbHelper.getWritableDatabase();
 
+        ContentValues contentValues = new ContentValues();
+        contentValues.put("name","123");
+        contentValues.put("pass","456");
+        db.insert(MyDbHelper.TABLE_NAME,null,contentValues);
         Button btn_query = findViewById(R.id.btn_query_db);
         btn_query.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -60,44 +60,21 @@ public class DisplayMessageActivity extends AppCompatActivity {
 
                 while(c.moveToNext())
                 {
-                    System.out.println("line:"+c.getString(1));
+                    System.out.println("line:"+c.getString(1) +"  Password:"+c.getString(2));
                 }
                 c.close();
             }
         });
 
         Cursor c = db.query(MyDbHelper.TABLE_NAME, new String[]{"_id","name", "pass"}, null, null, null, null, null);
-
-        while(c.moveToNext())
-        {
-            System.out.println("line:"+c.getString(1));
-        }
-        lv.setAdapter(new CursorAdapter(this,c) {
-            @Override
-            public View newView(Context context, Cursor cursor, ViewGroup parent) {
-                LayoutInflater inflater=(LayoutInflater)context.getSystemService(Context.LAYOUT_INFLATER_SERVICE );
-                View view=inflater.inflate(R.layout.item ,parent,false);
-                return view;
-            }
-
-            @Override
-            public void bindView(View view, Context context, Cursor cursor) {
-                TextView ta = view.findViewById(R.id.tv_a);
-                ta.setText(cursor.getString(1));
-            }
-        });
-        c.close();
+        myAdapter = new MyAdapter(this,c);
+        System.out.println("Cursor count: "+c.getCount());
+        ListView lv = findViewById(R.id.listView);
+        lv.setAdapter(myAdapter);
     }
-
-    public void addItem(View view)
+    public void ClearItem(View view)
     {
-
-        ContentResolver contentResolver = getContentResolver();
-        ContentValues values = new ContentValues();
-        Random random = new Random();
-        values.put("name", random.nextInt());
-        values.put("pass","password");
-        Uri uri =Uri.parse("content://" + MyContentProvider.AUTHORITY + "/test");
-        contentResolver.insert(uri,values);
+        Cursor c = db.query(MyDbHelper.TABLE_NAME, new String[]{"_id","name", "pass"}, null, null, null, null, null);
+        myAdapter.changeCursor(c);
     }
 }

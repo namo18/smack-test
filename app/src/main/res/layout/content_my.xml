@@ -20,7 +20,14 @@
             android:layout_weight="1"
             android:hint="@string/edit_message"
             android:inputType="text"
-            android:text="8615266115359" />
+            android:text="15266115359" />
+
+        <EditText
+            android:id="@+id/edit_password"
+            android:layout_width="60dp"
+            android:layout_height="wrap_content"
+            android:ems="10"
+            android:inputType="textPersonName" />
 
         <Button
             android:id="@+id/button2"
@@ -34,6 +41,26 @@
             android:layout_height="wrap_content"
             android:text="Search" />
 
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/textView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="AddFriend" />
+
+        <EditText
+            android:id="@+id/edit_friend"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:ems="10"
+            android:inputType="textPersonName" />
     </LinearLayout>
 
     <LinearLayout
@@ -91,6 +118,13 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="Subscribe" />
+
+        <Button
+            android:id="@+id/btn_subcribed"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Subscribed" />
     </LinearLayout>
 
     <LinearLayout
@@ -138,12 +172,33 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/btn_create_account"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Create Account" />
+
+        <Button
+            android:id="@+id/btn_account_attrib"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Attrib" />
+    </LinearLayout>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
         android:orientation="vertical">
 
         <ListView
             android:id="@+id/listView1"
             android:layout_width="match_parent"
-            android:layout_height="match_parent" />
+            android:layout_height="match_parent" >
+
+        </ListView>
     </LinearLayout>
 
 </LinearLayout>
